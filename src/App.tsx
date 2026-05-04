@@ -3,108 +3,67 @@ import { Box, Container, Flex, Heading, Text, VStack, SimpleGrid, Badge, Link } 
 const projects = [
   {
     title: 'NexusLink',
-    description: 'URL Shortener focado em Clean Architecture, Redis e Workers asíncronos.',
+    description: 'Engine de encurtamento e rastreamento de URLs com processamento assíncrono e Event-Driven Architecture.',
     techs: ['Golang', 'RabbitMQ', 'Redis', 'PostgreSQL'],
     demoUrl: 'https://github.com/leonardo-gorska/nexuslink',
-    color: 'teal'
+    color: 'teal',
+    isLive: false
   },
   {
     title: 'MedAgenda',
-    description: 'API corporativa para gestão médica com perfis restritivos e JWT.',
-    techs: ['Java', 'Spring Boot', 'PostgreSQL'],
+    description: 'API REST de agendamento médico com validação anti-overlap, JWT Stateless e OpenAPI docs.',
+    techs: ['Java 21', 'Spring Boot 3', 'Flyway', 'PostgreSQL'],
     demoUrl: 'https://github.com/leonardo-gorska/med-agenda',
-    color: 'green'
-  },
-  {
-    title: 'GorvaxCore',
-    description: 'Massivo Plugin Minecraft (+10k linhas) com IA de Bosses e Economia Dinâmica.',
-    techs: ['Java 21', 'Paper API', 'Gradle', 'SQLite'],
-    demoUrl: 'https://github.com/leonardo-gorska/gorvax-plugin',
-    color: 'orange'
-  },
-  {
-    title: 'LogiTrack API',
-    description: 'Engine de backend para logística usando Python assíncrono.',
-    techs: ['Python', 'FastAPI', 'Docker'],
-    demoUrl: 'https://github.com/leonardo-gorska/logitrack-api',
-    color: 'blue'
+    color: 'green',
+    isLive: false
   },
   {
     title: 'FinTrack',
-    description: 'Data-visualization em tempo real de transações e saldo.',
-    techs: ['React 19', 'TypeScript', 'Chakra UI', 'Recharts'],
-    demoUrl: 'https://leonardo-gorska.github.io/fintrack',
-    color: 'purple'
+    description: 'Dashboard financeiro interativo com gráficos em tempo real, dark mode e exportação CSV.',
+    techs: ['React 19', 'TypeScript', 'Chakra UI v3', 'Recharts'],
+    demoUrl: 'https://fintrack-rust-two.vercel.app',
+    color: 'purple',
+    isLive: true
   },
   {
-    title: 'AI Game Factory',
-    description: 'Pipeline LLM multitarefa (9 agentes) planejando e criando jogos.',
-    techs: ['Python', 'Next.js', 'LLMs'],
-    demoUrl: 'https://github.com/leonardo-gorska/ai-game-factory',
-    color: 'orange'
-  },
-  {
-    title: 'Gorvax Price Bot',
-    description: 'Bot rastreador de preços via web scraping stealth em 6 lojas BR.',
-    techs: ['TypeScript', 'Node.js', 'Puppeteer', 'SQLite'],
-    demoUrl: 'https://github.com/leonardo-gorska/gorvax-price-bot',
-    color: 'cyan'
+    title: 'LogiTrack API',
+    description: 'API corporativa ultrarrápida para gestão logística com processamento assíncrono ASGI.',
+    techs: ['Python 3.12', 'FastAPI', 'Docker', 'SQLAlchemy'],
+    demoUrl: 'https://github.com/leonardo-gorska/logitrack-api',
+    color: 'blue',
+    isLive: false
   },
   {
     title: 'DevBlog',
-    description: 'Plataforma de postagens técnicas e arquitetura otimizada para SEO.',
-    techs: ['Next.js 15', 'React', 'Markdown'],
-    demoUrl: 'https://leonardo-gorska.github.io/dev-blog',
-    color: 'gray'
+    description: 'Blog técnico sobre engenharia de software com SSR, SEO otimizado e arquitetura híbrida.',
+    techs: ['Next.js 15', 'React', 'MDX', 'Vercel'],
+    demoUrl: 'https://dev-blog-ten-rho.vercel.app',
+    color: 'gray',
+    isLive: true
   },
   {
-    title: 'PyAnalytics CLI',
-    description: 'Ferramenta via terminal para análise e exportação de dados analíticos.',
-    techs: ['Python 3.12', 'Pandas', 'Matplotlib'],
-    demoUrl: 'https://github.com/leonardo-gorska/pyanalytics',
-    color: 'yellow'
+    title: 'GorvaxCore',
+    description: 'Plugin Minecraft massivo (+10k linhas, 880 testes) com IA de Bosses e economia dinâmica.',
+    techs: ['Java 21', 'Paper API', 'Gradle', 'JUnit 5'],
+    demoUrl: 'https://github.com/leonardo-gorska/gorvax-plugin',
+    color: 'orange',
+    isLive: false
   },
   {
-    title: 'Gestão de Projetos A3',
-    description: 'Sistema Desktop para tracking acadêmico e relatórios gerenciais.',
-    techs: ['Java', 'JavaFX', 'MySQL'],
-    demoUrl: 'https://github.com/leonardo-gorska/gestao-projetos',
-    color: 'red'
+    title: 'Gorvax Price Bot',
+    description: 'Bot Telegram de rastreamento de preços em 6 lojas brasileiras com web scraping stealth.',
+    techs: ['TypeScript', 'Node.js', 'Puppeteer', 'SQLite'],
+    demoUrl: 'https://github.com/leonardo-gorska/gorvax-price-bot',
+    color: 'cyan',
+    isLive: false
   },
   {
-    title: 'Auto-DevRel',
-    description: 'Automação de engenharia e mock de tráfego orgânico via CLI.',
-    techs: ['Python', 'Git Automation', 'Bash'],
-    demoUrl: 'https://github.com/leonardo-gorska/auto-devrel',
-    color: 'purple'
-  },
-  {
-    title: 'Schematic Studio',
-    description: 'Desenvolvimento programático e algoritmos 3D via Perlin Noise.',
-    techs: ['Python', 'Numpy', '3D Math'],
-    demoUrl: 'https://github.com/leonardo-gorska/gorvax-schematics',
-    color: 'blue'
-  },
-  {
-    title: 'OCI Instance Bot',
-    description: 'Serviço em nuvem (SystemD) gerenciando conexões com Cloud Oracle.',
-    techs: ['Python', 'Cloud / OCI', 'Linux'],
-    demoUrl: 'https://github.com/leonardo-gorska/oci-bot',
-    color: 'red'
-  },
-  {
-    title: 'Gorvax Auto Accept',
-    description: 'Extensão VS Code rodando um daemon de automação interna.',
-    techs: ['TypeScript', 'VS Code API', 'Extension'],
-    demoUrl: 'https://github.com/leonardo-gorska/husk-auto-accept',
-    color: 'cyan'
-  },
-  {
-    title: 'GorvaxMC Manual',
-    description: 'Design system medieval para E-book interativo (HTML/CSS Vanilla).',
-    techs: ['HTML5', 'CSS3', 'JS'],
-    demoUrl: 'https://leonardo-gorska.github.io/gorvaxmc-manual',
-    color: 'orange'
+    title: 'AI Game Factory',
+    description: 'Pipeline autônomo com 9 agentes de IA que criam e evoluem jogos de navegador.',
+    techs: ['Python', 'Next.js', 'LLMs', 'Quality Engine'],
+    demoUrl: 'https://github.com/leonardo-gorska/ai-game-factory',
+    color: 'orange',
+    isLive: false
   }
 ];
 
@@ -162,12 +121,31 @@ export default function App() {
                       <Badge key={tech} colorPalette={proj.color} size="sm">{tech}</Badge>
                     ))}
                   </Flex>
-                  <Link href={proj.demoUrl} target="_blank" color="blue.400" fontWeight="bold" _hover={{ color: "blue.300", textDecoration: "underline" }}>
-                    Ver Código / Live Demo →
+                  <Link href={proj.demoUrl} target="_blank" color={proj.isLive ? "green.400" : "blue.400"} fontWeight="bold" _hover={{ color: proj.isLive ? "green.300" : "blue.300", textDecoration: "underline" }}>
+                    {proj.isLive ? '🟢 Live Demo →' : 'Ver Código →'}
                   </Link>
                 </Box>
               ))}
             </SimpleGrid>
+          </Box>
+
+          {/* Contato */}
+          <Box w="full" mt={16} py={12} borderTop="1px solid" borderColor="gray.700">
+            <VStack gap={4} align="center">
+              <Heading size="xl" color="white">Vamos Conversar?</Heading>
+              <Text color="gray.400" fontSize="lg" textAlign="center" maxW="600px">
+                Estou em busca de oportunidades como Estagiário ou Desenvolvedor Júnior. 
+                Entre em contato por email ou LinkedIn.
+              </Text>
+              <Flex gap={4} mt={4}>
+                <Link href="mailto:leogorska22@hotmail.com" target="_blank" bg="blue.500" color="white" px={6} py={3} borderRadius="md" fontWeight="bold" _hover={{ bg: "blue.400" }} textDecoration="none">
+                  📧 Email
+                </Link>
+                <Link href="https://linkedin.com/in/leonardo-gorska" target="_blank" bg="transparent" border="1px solid" borderColor="blue.500" color="blue.400" px={6} py={3} borderRadius="md" fontWeight="bold" _hover={{ bg: "blue.900" }} textDecoration="none">
+                  💼 LinkedIn
+                </Link>
+              </Flex>
+            </VStack>
           </Box>
 
         </VStack>
