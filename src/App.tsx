@@ -1,4 +1,5 @@
 import { Box, Container, Flex, Heading, Text, VStack, SimpleGrid, Badge, Link } from '@chakra-ui/react';
+import ParticleField from './components/ParticleField';
 
 const projects = [
   {
@@ -69,8 +70,9 @@ const projects = [
 
 export default function App() {
   return (
-    <Box minH="100vh" bg="gray.900" color="white" pt={20} pb={20}>
-      <Container maxW="container.xl">
+    <Box minH="100vh" bg="gray.900" color="white" pt={20} pb={20} position="relative" overflow="hidden">
+      <ParticleField />
+      <Container maxW="container.xl" position="relative" zIndex={2}>
         <VStack gap={10} align="flex-start">
           
           {/* O Hero */}
