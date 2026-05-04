@@ -2,6 +2,8 @@
 
 > **Hub visual de apresentação e catálogo de projetos em Engenharia de Software.**
 
+🟢 **[Live Demo](https://portfolio-kohl-six-45.vercel.app)** — Deployed on Vercel
+
 Este é o código fonte do meu portfólio pessoal, uma Single Page Application (SPA) ultra-rápida construída para unificar toda a minha trajetória, projetos backend, frontend, freelance e arquiteturas cloud-native em uma única vitrine interativa.
 
 ![React](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
