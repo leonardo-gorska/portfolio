@@ -1,246 +1,182 @@
 import { useEffect, useRef } from 'react'
+import { Renderer, Camera, Geometry, Program, Mesh } from 'ogl'
 
 /**
- * Flow Field Particles — Antigravity-inspired.
- * 
- * Thousands of tiny particles flow through a Perlin noise vector field.
- * The cursor warps the flow field, creating organic disturbances.
- * Particles leave soft trails as they move.
+ * WebGL Particle Field — Based on ReactBits Particles (OGL).
+ * 3D sphere of floating particles with organic sine-wave motion,
+ * mouse-reactive displacement, and slow rotation.
  */
 
-// ---- Simplex-like 2D noise ----
-const F2 = 0.5 * (Math.sqrt(3) - 1)
-const G2 = (3 - Math.sqrt(3)) / 6
-
-const perm = new Uint8Array(512)
-const grad2 = [
-  [1,1],[-1,1],[1,-1],[-1,-1],
-  [1,0],[-1,0],[0,1],[0,-1],
-]
-;(() => {
-  const p = new Uint8Array(256)
-  for (let i = 0; i < 256; i++) p[i] = i
-  for (let i = 255; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[p[i], p[j]] = [p[j], p[i]]
-  }
-  for (let i = 0; i < 512; i++) perm[i] = p[i & 255]
-})()
-
-function noise2D(x: number, y: number): number {
-  const s = (x + y) * F2
-  const i = Math.floor(x + s)
-  const j = Math.floor(y + s)
-  const t = (i + j) * G2
-  const x0 = x - (i - t)
-  const y0 = y - (j - t)
-  const i1 = x0 > y0 ? 1 : 0
-  const j1 = x0 > y0 ? 0 : 1
-  const x1 = x0 - i1 + G2
-  const y1 = y0 - j1 + G2
-  const x2 = x0 - 1 + 2 * G2
-  const y2 = y0 - 1 + 2 * G2
-  const ii = i & 255
-  const jj = j & 255
-  let n0 = 0, n1 = 0, n2 = 0
-  let t0 = 0.5 - x0 * x0 - y0 * y0
-  if (t0 > 0) {
-    t0 *= t0
-    const gi = perm[ii + perm[jj]] % 8
-    n0 = t0 * t0 * (grad2[gi][0] * x0 + grad2[gi][1] * y0)
-  }
-  let t1 = 0.5 - x1 * x1 - y1 * y1
-  if (t1 > 0) {
-    t1 *= t1
-    const gi = perm[ii + i1 + perm[jj + j1]] % 8
-    n1 = t1 * t1 * (grad2[gi][0] * x1 + grad2[gi][1] * y1)
-  }
-  let t2 = 0.5 - x2 * x2 - y2 * y2
-  if (t2 > 0) {
-    t2 *= t2
-    const gi = perm[ii + 1 + perm[jj + 1]] % 8
-    n2 = t2 * t2 * (grad2[gi][0] * x2 + grad2[gi][1] * y2)
-  }
-  return 70 * (n0 + n1 + n2) // -1 to 1
+const hexToRgb = (hex: string): number[] => {
+  hex = hex.replace(/^#/, '')
+  if (hex.length === 3) hex = hex.split('').map(c => c + c).join('')
+  const int = parseInt(hex, 16)
+  return [((int >> 16) & 255) / 255, ((int >> 8) & 255) / 255, (int & 255) / 255]
 }
 
-// ---- Particle system ----
-interface Particle {
-  x: number
-  y: number
-  vx: number
-  vy: number
-  life: number
-  maxLife: number
-  hue: number
-}
+const vertex = /* glsl */ `
+  attribute vec3 position;
+  attribute vec4 random;
+  attribute vec3 color;
 
-const PARTICLE_COUNT = 1800
-const NOISE_SCALE = 0.003
-const NOISE_SPEED = 0.0008
-const PARTICLE_SPEED = 0.8
-const CURSOR_RADIUS = 200
-const CURSOR_FORCE = 0.4
-const TRAIL_ALPHA = 0.03
+  uniform mat4 modelMatrix;
+  uniform mat4 viewMatrix;
+  uniform mat4 projectionMatrix;
+  uniform float uTime;
+  uniform float uSpread;
+  uniform float uBaseSize;
+  uniform float uSizeRandomness;
+
+  varying vec4 vRandom;
+  varying vec3 vColor;
+
+  void main() {
+    vRandom = random;
+    vColor = color;
+
+    vec3 pos = position * uSpread;
+    pos.z *= 10.0;
+
+    vec4 mPos = modelMatrix * vec4(pos, 1.0);
+    float t = uTime;
+    mPos.x += sin(t * random.z + 6.28 * random.w) * mix(0.1, 1.5, random.x);
+    mPos.y += sin(t * random.y + 6.28 * random.x) * mix(0.1, 1.5, random.w);
+    mPos.z += sin(t * random.w + 6.28 * random.y) * mix(0.1, 1.5, random.z);
+
+    vec4 mvPos = viewMatrix * mPos;
+    gl_PointSize = (uBaseSize * (1.0 + uSizeRandomness * (random.x - 0.5))) / length(mvPos.xyz);
+    gl_Position = projectionMatrix * mvPos;
+  }
+`
+
+const fragment = /* glsl */ `
+  precision highp float;
+
+  uniform float uTime;
+  varying vec4 vRandom;
+  varying vec3 vColor;
+
+  void main() {
+    vec2 uv = gl_PointCoord.xy;
+    float d = length(uv - vec2(0.5));
+    float circle = smoothstep(0.5, 0.4, d) * 0.8;
+    gl_FragColor = vec4(vColor + 0.2 * sin(uv.yxx + uTime + vRandom.y * 6.28), circle);
+  }
+`
+
+const COLORS = ['#60a5fa', '#818cf8', '#a78bfa', '#c084fc', '#38bdf8']
 
 export default function ParticleField() {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const mouse = useRef({ x: -1000, y: -1000 })
-  const smoothMouse = useRef({ x: -1000, y: -1000 })
-  const particles = useRef<Particle[]>([])
-  const animationId = useRef<number>(0)
-  const time = useRef(0)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const mouseRef = useRef({ x: 0, y: 0 })
 
   useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
+    const container = containerRef.current
+    if (!container) return
+
+    const renderer = new Renderer({ dpr: Math.min(window.devicePixelRatio, 2), depth: false, alpha: true })
+    const gl = renderer.gl
+    container.appendChild(gl.canvas)
+    gl.clearColor(0, 0, 0, 0)
+
+    const camera = new Camera(gl, { fov: 15 })
+    camera.position.set(0, 0, 20)
 
     const resize = () => {
-      canvas.width = window.innerWidth
-      canvas.height = Math.max(
-        document.documentElement.scrollHeight,
-        window.innerHeight
-      )
-      // Reinit particles on resize
-      initParticles()
+      renderer.setSize(container.clientWidth, container.clientHeight)
+      camera.perspective({ aspect: gl.canvas.width / gl.canvas.height })
     }
-
-    const initParticles = () => {
-      particles.current = []
-      for (let i = 0; i < PARTICLE_COUNT; i++) {
-        particles.current.push(createParticle())
-      }
-    }
-
-    const createParticle = (): Particle => ({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      vx: 0,
-      vy: 0,
-      life: Math.random() * 300,
-      maxLife: 300 + Math.random() * 200,
-      hue: 220 + Math.random() * 60, // blue to purple range
-    })
-
-    resize()
     window.addEventListener('resize', resize)
+    resize()
 
     const handleMouseMove = (e: MouseEvent) => {
-      mouse.current = {
-        x: e.clientX,
-        y: e.clientY + window.scrollY,
+      const rect = container.getBoundingClientRect()
+      mouseRef.current = {
+        x: ((e.clientX - rect.left) / rect.width) * 2 - 1,
+        y: -(((e.clientY - rect.top) / rect.height) * 2 - 1),
       }
     }
-    window.addEventListener('mousemove', handleMouseMove)
+    container.addEventListener('mousemove', handleMouseMove)
 
-    // Fill background once
-    ctx.fillStyle = 'rgba(10, 10, 20, 1)'
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    const count = 300
+    const positions = new Float32Array(count * 3)
+    const randoms = new Float32Array(count * 4)
+    const colors = new Float32Array(count * 3)
 
-    const animate = () => {
-      time.current += NOISE_SPEED
-
-      // Smooth mouse follow (LERP)
-      smoothMouse.current.x += (mouse.current.x - smoothMouse.current.x) * 0.05
-      smoothMouse.current.y += (mouse.current.y - smoothMouse.current.y) * 0.05
-
-      // Trail effect: semi-transparent overlay instead of full clear
-      ctx.fillStyle = `rgba(10, 10, 20, ${TRAIL_ALPHA})`
-      ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-      const mx = smoothMouse.current.x
-      const my = smoothMouse.current.y
-      const t = time.current
-
-      for (const p of particles.current) {
-        // Flow field angle from noise
-        const noiseVal = noise2D(p.x * NOISE_SCALE + t, p.y * NOISE_SCALE + t)
-        const angle = noiseVal * Math.PI * 4
-
-        // Base velocity from flow field
-        p.vx += Math.cos(angle) * PARTICLE_SPEED * 0.1
-        p.vy += Math.sin(angle) * PARTICLE_SPEED * 0.1
-
-        // Cursor influence — gentle warp
-        const dx = p.x - mx
-        const dy = p.y - my
-        const dist = Math.sqrt(dx * dx + dy * dy)
-        if (dist < CURSOR_RADIUS && dist > 1) {
-          const force = (1 - dist / CURSOR_RADIUS) * CURSOR_FORCE
-          // Swirl around cursor instead of push away
-          const swirlAngle = Math.atan2(dy, dx) + Math.PI * 0.5
-          p.vx += Math.cos(swirlAngle) * force
-          p.vy += Math.sin(swirlAngle) * force
-        }
-
-        // Damping
-        p.vx *= 0.92
-        p.vy *= 0.92
-
-        // Speed limit
-        const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy)
-        if (speed > 2.5) {
-          p.vx = (p.vx / speed) * 2.5
-          p.vy = (p.vy / speed) * 2.5
-        }
-
-        // Move
-        p.x += p.vx
-        p.y += p.vy
-        p.life++
-
-        // Lifecycle fade
-        const lifeRatio = p.life / p.maxLife
-        const alpha = lifeRatio < 0.1
-          ? lifeRatio * 10 // fade in
-          : lifeRatio > 0.9
-            ? (1 - lifeRatio) * 10 // fade out
-            : 1
-
-        // Size based on proximity to cursor
-        const cursorInfluence = dist < CURSOR_RADIUS ? (1 - dist / CURSOR_RADIUS) : 0
-        const size = 1 + cursorInfluence * 2
-
-        // Draw particle
-        ctx.beginPath()
-        ctx.arc(p.x, p.y, size, 0, Math.PI * 2)
-        ctx.fillStyle = `hsla(${p.hue}, 70%, 65%, ${alpha * (0.3 + cursorInfluence * 0.5)})`
-        ctx.fill()
-
-        // Respawn if dead or off-screen
-        if (p.life > p.maxLife || p.x < -50 || p.x > canvas.width + 50 || p.y < -50 || p.y > canvas.height + 50) {
-          Object.assign(p, createParticle())
-        }
-      }
-
-      animationId.current = requestAnimationFrame(animate)
+    for (let i = 0; i < count; i++) {
+      let x, y, z, len
+      do {
+        x = Math.random() * 2 - 1
+        y = Math.random() * 2 - 1
+        z = Math.random() * 2 - 1
+        len = x * x + y * y + z * z
+      } while (len > 1 || len === 0)
+      const r = Math.cbrt(Math.random())
+      positions.set([x * r, y * r, z * r], i * 3)
+      randoms.set([Math.random(), Math.random(), Math.random(), Math.random()], i * 4)
+      const col = hexToRgb(COLORS[Math.floor(Math.random() * COLORS.length)])
+      colors.set(col, i * 3)
     }
 
-    animate()
+    const geometry = new Geometry(gl, {
+      position: { size: 3, data: positions },
+      random: { size: 4, data: randoms },
+      color: { size: 3, data: colors },
+    })
 
-    const handleScroll = () => {
-      const newH = Math.max(document.documentElement.scrollHeight, window.innerHeight)
-      if (Math.abs(canvas.height - newH) > 100) {
-        canvas.height = newH
-        ctx.fillStyle = 'rgba(10, 10, 20, 1)'
-        ctx.fillRect(0, 0, canvas.width, canvas.height)
-      }
+    const program = new Program(gl, {
+      vertex,
+      fragment,
+      uniforms: {
+        uTime: { value: 0 },
+        uSpread: { value: 10 },
+        uBaseSize: { value: 100 * Math.min(window.devicePixelRatio, 2) },
+        uSizeRandomness: { value: 1 },
+      },
+      transparent: true,
+      depthTest: false,
+    })
+
+    const particles = new Mesh(gl, { mode: gl.POINTS, geometry, program })
+
+    let animationFrameId: number
+    let lastTime = performance.now()
+    let elapsed = 0
+    const speed = 0.1
+
+    const update = (t: number) => {
+      animationFrameId = requestAnimationFrame(update)
+      const delta = t - lastTime
+      lastTime = t
+      elapsed += delta * speed
+
+      program.uniforms.uTime.value = elapsed * 0.001
+
+      // Smooth mouse follow
+      particles.position.x += (-mouseRef.current.x * 1 - particles.position.x) * 0.05
+      particles.position.y += (-mouseRef.current.y * 1 - particles.position.y) * 0.05
+
+      // Slow organic rotation
+      particles.rotation.x = Math.sin(elapsed * 0.0002) * 0.1
+      particles.rotation.y = Math.cos(elapsed * 0.0005) * 0.15
+      particles.rotation.z += 0.01 * speed
+
+      renderer.render({ scene: particles, camera })
     }
-    window.addEventListener('scroll', handleScroll)
+
+    animationFrameId = requestAnimationFrame(update)
 
     return () => {
       window.removeEventListener('resize', resize)
-      window.removeEventListener('mousemove', handleMouseMove)
-      window.removeEventListener('scroll', handleScroll)
-      cancelAnimationFrame(animationId.current)
+      container.removeEventListener('mousemove', handleMouseMove)
+      cancelAnimationFrame(animationFrameId)
+      if (container.contains(gl.canvas)) container.removeChild(gl.canvas)
     }
   }, [])
 
   return (
-    <canvas
-      ref={canvasRef}
+    <div
+      ref={containerRef}
       style={{
         position: 'absolute',
         top: 0,
@@ -248,7 +184,7 @@ export default function ParticleField() {
         width: '100%',
         height: '100%',
         pointerEvents: 'none',
-        zIndex: 0,
+        zIndex: 1,
       }}
     />
   )
