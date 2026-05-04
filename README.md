@@ -1,73 +1,46 @@
-# React + TypeScript + Vite
+# 🚀 Portfólio Central — Leonardo Gorska
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> **Hub visual de apresentação e catálogo de projetos em Engenharia de Software.**
 
-Currently, two official plugins are available:
+Este é o código fonte do meu portfólio pessoal, uma Single Page Application (SPA) ultra-rápida construída para unificar toda a minha trajetória, projetos backend, frontend, freelance e arquiteturas cloud-native em uma única vitrine interativa.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+![React](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
+![Chakra UI](https://img.shields.io/badge/Chakra_UI_v3-319795?style=for-the-badge&logo=chakraui&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🎯 Por que este projeto existe?
+O objetivo deste portfólio não é apenas listar links, mas demonstrar domínio sobre desenvolvimento de interfaces modernas. Construído com **React 19** e **Chakra UI v3**, ele aplica conceitos rigorosos de tipagem com TypeScript, layouting com CSS Grid/Flexbox avançado e componentização reutilizável, garantindo zero layout-shifts e um design limpo (Dark Theme native).
 
-## Expanding the ESLint configuration
+## 🛠️ Stack Técnica
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **Framework:** React 19.2
+- **Linguagem:** TypeScript 6.0
+- **Build Tool:** Vite 8.0
+- **UI/UX Design System:** Chakra UI v3 (`@chakra-ui/react`)
+- **Deploy:** Vercel / GitHub Pages
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## 🚀 Como rodar o Portfólio localmente
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+Para visualizar o projeto na sua máquina local:
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+# 1. Clone o repositório
+git clone https://github.com/leonardo-gorska/portfolio.git
+
+# 2. Acesse o diretório
+cd portfolio
+
+# 3. Instale as dependências
+npm install
+
+# 4. Inicie o servidor de desenvolvimento
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+A aplicação estará disponível instantaneamente em `http://localhost:5173`.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## 📝 Licença
+MIT
