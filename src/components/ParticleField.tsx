@@ -1,190 +1,227 @@
-import { useEffect, useRef } from 'react'
-import { Renderer, Camera, Geometry, Program, Mesh } from 'ogl'
+"use client"
 
-/**
- * WebGL Particle Field — Based on ReactBits Particles (OGL).
- * 3D sphere of floating particles with organic sine-wave motion,
- * mouse-reactive displacement, and slow rotation.
- */
+import { useEffect, useRef } from "react"
 
-const hexToRgb = (hex: string): number[] => {
-  hex = hex.replace(/^#/, '')
-  if (hex.length === 3) hex = hex.split('').map(c => c + c).join('')
-  const int = parseInt(hex, 16)
-  return [((int >> 16) & 255) / 255, ((int >> 8) & 255) / 255, (int & 255) / 255]
+// Default Antigravity-like colors: Royal Blue, Vibrant Purple/Magenta, Deep Red, Warm Orange, Teal
+const DEFAULT_COLORS = ["#3b82f6", "#8b5cf6", "#e11d48", "#f97316", "#10b981"]
+
+interface ParticleFieldProps {
+  colors?: string[]
 }
 
-const vertex = /* glsl */ `
-  attribute vec3 position;
-  attribute vec4 random;
-  attribute vec3 color;
-
-  uniform mat4 modelMatrix;
-  uniform mat4 viewMatrix;
-  uniform mat4 projectionMatrix;
-  uniform float uTime;
-  uniform float uSpread;
-  uniform float uBaseSize;
-  uniform float uSizeRandomness;
-
-  varying vec4 vRandom;
-  varying vec3 vColor;
-
-  void main() {
-    vRandom = random;
-    vColor = color;
-
-    vec3 pos = position * uSpread;
-    pos.z *= 10.0;
-
-    vec4 mPos = modelMatrix * vec4(pos, 1.0);
-    float t = uTime;
-    mPos.x += sin(t * random.z + 6.28 * random.w) * mix(0.1, 1.5, random.x);
-    mPos.y += sin(t * random.y + 6.28 * random.x) * mix(0.1, 1.5, random.w);
-    mPos.z += sin(t * random.w + 6.28 * random.y) * mix(0.1, 1.5, random.z);
-
-    vec4 mvPos = viewMatrix * mPos;
-    gl_PointSize = (uBaseSize * (1.0 + uSizeRandomness * (random.x - 0.5))) / length(mvPos.xyz);
-    gl_Position = projectionMatrix * mvPos;
-  }
-`
-
-const fragment = /* glsl */ `
-  precision highp float;
-
-  uniform float uTime;
-  varying vec4 vRandom;
-  varying vec3 vColor;
-
-  void main() {
-    vec2 uv = gl_PointCoord.xy;
-    float d = length(uv - vec2(0.5));
-    float circle = smoothstep(0.5, 0.4, d) * 0.8;
-    gl_FragColor = vec4(vColor + 0.2 * sin(uv.yxx + uTime + vRandom.y * 6.28), circle);
-  }
-`
-
-const COLORS = ['#60a5fa', '#818cf8', '#a78bfa', '#c084fc', '#38bdf8']
-
-export default function ParticleField() {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const mouseRef = useRef({ x: 0, y: 0 })
+export default function ParticleField({ colors = DEFAULT_COLORS }: ParticleFieldProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
-    const container = containerRef.current
-    if (!container) return
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext("2d", { alpha: true })
+    if (!ctx) return
 
-    const renderer = new Renderer({ dpr: Math.min(window.devicePixelRatio, 2), depth: false, alpha: true })
-    const gl = renderer.gl
-    container.appendChild(gl.canvas)
-    gl.clearColor(0, 0, 0, 0)
+    let animationFrameId: number
+    let width = window.innerWidth
+    let height = window.innerHeight
 
-    const camera = new Camera(gl, { fov: 15 })
-    camera.position.set(0, 0, 20)
+    // Track mouse position (default to center)
+    let mouseX = width / 2
+    let mouseY = height / 2
+    let isMouseMoving = false
 
     const resize = () => {
-      renderer.setSize(container.clientWidth, container.clientHeight)
-      camera.perspective({ aspect: gl.canvas.width / gl.canvas.height })
+      width = window.innerWidth
+      height = window.innerHeight
+      canvas.width = width * window.devicePixelRatio
+      canvas.height = height * window.devicePixelRatio
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio)
     }
-    window.addEventListener('resize', resize)
+
+    window.addEventListener("resize", resize)
     resize()
 
     const handleMouseMove = (e: MouseEvent) => {
-      const rect = container.getBoundingClientRect()
-      mouseRef.current = {
-        x: ((e.clientX - rect.left) / rect.width) * 2 - 1,
-        y: -(((e.clientY - rect.top) / rect.height) * 2 - 1),
+      mouseX = e.clientX
+      mouseY = e.clientY
+      isMouseMoving = true
+    }
+
+    const handleMouseLeave = () => {
+      isMouseMoving = false
+    }
+
+    window.addEventListener("mousemove", handleMouseMove)
+    window.addEventListener("mouseleave", handleMouseLeave)
+
+    class Star {
+      x: number
+      y: number
+      size: number
+      speedX: number
+      speedY: number
+      opacity: number
+
+      constructor() {
+        this.x = Math.random() * width
+        this.y = Math.random() * height
+        this.size = Math.random() * 1.2
+        this.speedX = (Math.random() - 0.5) * 0.3
+        this.speedY = (Math.random() - 0.5) * 0.3
+        this.opacity = Math.random() * 0.5 + 0.1
+      }
+
+      update() {
+        this.x += this.speedX
+        this.y += this.speedY
+
+        if (this.x < 0) this.x = width
+        if (this.x > width) this.x = 0
+        if (this.y < 0) this.y = height
+        if (this.y > height) this.y = 0
+      }
+
+      draw() {
+        if (!ctx) return
+        ctx.beginPath()
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2)
+        ctx.fillStyle = `rgba(150, 150, 150, ${this.opacity})`
+        ctx.fill()
       }
     }
-    container.addEventListener('mousemove', handleMouseMove)
 
-    const count = 300
-    const positions = new Float32Array(count * 3)
-    const randoms = new Float32Array(count * 4)
-    const colors = new Float32Array(count * 3)
+    class Particle {
+      x: number
+      y: number
+      vx: number
+      vy: number
+      baseVx: number
+      baseVy: number
+      size: number
+      color: string
+      friction: number
 
-    for (let i = 0; i < count; i++) {
-      let x, y, z, len
-      do {
-        x = Math.random() * 2 - 1
-        y = Math.random() * 2 - 1
-        z = Math.random() * 2 - 1
-        len = x * x + y * y + z * z
-      } while (len > 1 || len === 0)
-      const r = Math.cbrt(Math.random())
-      positions.set([x * r, y * r, z * r], i * 3)
-      randoms.set([Math.random(), Math.random(), Math.random(), Math.random()], i * 4)
-      const col = hexToRgb(COLORS[Math.floor(Math.random() * COLORS.length)])
-      colors.set(col, i * 3)
+      constructor() {
+        this.x = Math.random() * width
+        this.y = Math.random() * height
+        // Base drift direction (diagonal up-right, radiating out slightly)
+        this.baseVx = (Math.random() - 0.2) * 1.5 // Mostly right
+        this.baseVy = (Math.random() - 0.8) * 1.5 // Mostly up
+        this.vx = this.baseVx
+        this.vy = this.baseVy
+        this.size = Math.random() * 2 + 1 // Streak thickness
+        this.color = colors[Math.floor(Math.random() * colors.length)]
+        this.friction = Math.random() * 0.02 + 0.94 // 0.94 to 0.96
+      }
+
+      update() {
+        // Continuous flow / drift
+        let ax = (this.baseVx - this.vx) * 0.02
+        let ay = (this.baseVy - this.vy) * 0.02
+
+        // Mouse gravity / vortex effect
+        const dx = mouseX - this.x
+        const dy = mouseY - this.y
+        const dist = Math.sqrt(dx * dx + dy * dy) || 1
+
+        if (dist < 400 && isMouseMoving) {
+          const force = (400 - dist) / 400 // 0 to 1 intensity based on proximity
+
+          const dirX = dx / dist
+          const dirY = dy / dist
+
+          // Attraction (pulls towards mouse)
+          ax += dirX * force * 0.6
+          ay += dirY * force * 0.6
+
+          // Tangent (creates the vortex/orbit effect)
+          ax += -dirY * force * 0.4
+          ay += dirX * force * 0.4
+        }
+
+        // Apply acceleration & friction
+        this.vx += ax
+        this.vy += ay
+        this.vx *= this.friction
+        this.vy *= this.friction
+
+        this.x += this.vx
+        this.y += this.vy
+
+        // Wrap around seamlessly
+        if (this.x > width + 50) this.x = -50
+        if (this.x < -50) this.x = width + 50
+        if (this.y > height + 50) this.y = -50
+        if (this.y < -50) this.y = height + 50
+      }
+
+      draw() {
+        if (!ctx) return
+        ctx.beginPath()
+
+        // Elongated streak proportional to velocity
+        const streakMultiplier = 3.5
+        const startX = this.x - this.vx * streakMultiplier
+        const startY = this.y - this.vy * streakMultiplier
+
+        ctx.moveTo(startX, startY)
+        ctx.lineTo(this.x, this.y)
+
+        ctx.strokeStyle = this.color
+        ctx.lineWidth = this.size
+        ctx.lineCap = "round"
+        ctx.stroke()
+      }
     }
 
-    const geometry = new Geometry(gl, {
-      position: { size: 3, data: positions },
-      random: { size: 4, data: randoms },
-      color: { size: 3, data: colors },
-    })
+    const particles: Particle[] = []
+    const stars: Star[] = []
+    
+    // Scale particle count based on screen width for performance
+    const particleCount = Math.min(Math.floor(window.innerWidth / 4), 300)
+    const starCount = Math.min(Math.floor(window.innerWidth / 6), 150)
 
-    const program = new Program(gl, {
-      vertex,
-      fragment,
-      uniforms: {
-        uTime: { value: 0 },
-        uSpread: { value: 10 },
-        uBaseSize: { value: 100 * Math.min(window.devicePixelRatio, 2) },
-        uSizeRandomness: { value: 1 },
-      },
-      transparent: true,
-      depthTest: false,
-    })
+    for (let i = 0; i < particleCount; i++) particles.push(new Particle())
+    for (let i = 0; i < starCount; i++) stars.push(new Star())
 
-    const particles = new Mesh(gl, { mode: gl.POINTS, geometry, program })
+    const render = () => {
+      if (!ctx) return
+      // Clear entirely for sharp streaks
+      ctx.clearRect(0, 0, width, height)
 
-    let animationFrameId: number
-    let lastTime = performance.now()
-    let elapsed = 0
-    const speed = 0.1
+      // Draw background stars
+      stars.forEach(star => {
+        star.update()
+        star.draw()
+      })
 
-    const update = (t: number) => {
-      animationFrameId = requestAnimationFrame(update)
-      const delta = t - lastTime
-      lastTime = t
-      elapsed += delta * speed
+      // Draw active swarm particles
+      particles.forEach(p => {
+        p.update()
+        p.draw()
+      })
 
-      program.uniforms.uTime.value = elapsed * 0.001
-
-      // Smooth mouse follow
-      particles.position.x += (-mouseRef.current.x * 1 - particles.position.x) * 0.05
-      particles.position.y += (-mouseRef.current.y * 1 - particles.position.y) * 0.05
-
-      // Slow organic rotation
-      particles.rotation.x = Math.sin(elapsed * 0.0002) * 0.1
-      particles.rotation.y = Math.cos(elapsed * 0.0005) * 0.15
-      particles.rotation.z += 0.01 * speed
-
-      renderer.render({ scene: particles, camera })
+      animationFrameId = requestAnimationFrame(render)
     }
 
-    animationFrameId = requestAnimationFrame(update)
+    render()
 
     return () => {
-      window.removeEventListener('resize', resize)
-      container.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener("resize", resize)
+      window.removeEventListener("mousemove", handleMouseMove)
+      window.removeEventListener("mouseleave", handleMouseLeave)
       cancelAnimationFrame(animationFrameId)
-      if (container.contains(gl.canvas)) container.removeChild(gl.canvas)
     }
-  }, [])
+  }, [colors])
 
   return (
-    <div
-      ref={containerRef}
+    <canvas
+      ref={canvasRef}
       style={{
-        position: 'absolute',
+        position: "fixed",
         top: 0,
         left: 0,
-        width: '100%',
-        height: '100%',
-        pointerEvents: 'none',
-        zIndex: 1,
+        width: "100vw",
+        height: "100vh",
+        pointerEvents: "none",
+        zIndex: 0, // Behind everything
       }}
     />
   )
