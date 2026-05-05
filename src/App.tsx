@@ -59,11 +59,11 @@ const projects = [
     isLive: false
   },
   {
-    title: 'AI Game Factory',
-    description: 'Pipeline autônomo com 9 agentes de IA que criam e evoluem jogos de navegador.',
-    techs: ['Python', 'Next.js', 'LLMs', 'Quality Engine'],
-    demoUrl: 'https://github.com/leonardo-gorska/ai-game-factory',
-    color: 'orange',
+    title: 'PyAnalytics',
+    description: 'CLI corporativa em Python para análise exploratória de dados acelerada no terminal.',
+    techs: ['Python', 'Pandas', 'Rich', 'Matplotlib'],
+    demoUrl: 'https://github.com/leonardo-gorska/pyanalytics',
+    color: 'yellow',
     isLive: false
   }
 ];
