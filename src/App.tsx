@@ -84,9 +84,11 @@ export default function App() {
               Engenharia de Software robusta,<br/> desde o Server até a Tela.
             </Heading>
             <Text fontSize="xl" color="gray.400" lineHeight="tall">
-              Oi, eu sou o <b>Leonardo Gorska</b>. Desenvolvedor Full-Stack focado em 
-              Clean Architecture, Mensageria (RabbitMQ) e performance. Construo APIs impenetráveis em Golang e Spring Boot, 
-              e trago dashboards em React à vida.
+              Oi, sou <b>Leonardo Gorska</b>. Desenvolvedor Full-Stack focado em Engenharia de Software Moderna.
+              <br/><br/>
+              <b>Back-end:</b> Experiência no desenvolvimento de APIs robustas e escaláveis em Golang, Spring Boot e Python. Na construção de cada projeto utilizei Clean Architecture e sistemas distribuídos com mensageria (RabbitMQ).
+              <br/><br/>
+              <b>Front-end:</b> Interfaces reativas utilizando React e TypeScript.
             </Text>
             <Flex gap={4} mt={6}>
               <Link href="https://github.com/leonardo-gorska" target="_blank" bg="white" color="black" px={6} py={3} borderRadius="md" fontWeight="bold" _hover={{ bg: "gray.200" }} textDecoration="none">
